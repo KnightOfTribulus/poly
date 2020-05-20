@@ -127,4 +127,4 @@ Modifies initial-object and returns it."
     (md:modf (slot-value <> x) new-x)
     (md:modf (slot-value <> y) new-y)))
 
-(defparameter *actual-poly* (make-instance 'sizeless-polynomial))
+(defparameter *shimmy-poly* (make-instance 'sizeless-polynomial))
