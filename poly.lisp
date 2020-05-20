@@ -2,107 +2,143 @@
 
 (in-package #:poly)
 
-;;;; GLOBALS:
+;;;; INTERFACES:
 
-;;;; UI UTILS:
+(defgeneric read-double (this)
+  (:documentation "Reads input from the object as a double float."))
 
-(eval-when (:compile-toplevel)
-  (defparameter *from*      "0")
-  (defparameter *to*        "1")
-  (defparameter *nominal* "0.5")
-  (defparameter *cell-width* 6)
-  (defparameter *cell-height* 1)
-  (defun make-keyword (sym)
-    (al:make-keyword (string-upcase (format nil "~a" sym))))
-  (defun make-nth-name (sym n)
-    (al:symbolicate sym (string-upcase (format nil "~a" n))))) 
+(defgeneric read-data (this)
+  (:documentation "Reads data from the container."))
 
-(defmacro with-n-frames (n master-frame &body body)
-  (list 'let*
-	(loop for i from 1 to n
-	      ;; define the rest 
-	      collect `(,(make-nth-name 'frame- i)
-			(make-instance 'frame ,@(when master-frame
-						  (list :master master-frame))))
-	      collect `(,(make-nth-name 'label- i)
-			(make-instance 'label
-				       :text ,(format nil "r~a" i)
-				       :width ,*cell-width* 
-				       :master ,(make-nth-name 'frame- i)))
-	      
-	      collect `(,(make-nth-name 'from- i)
-			(make-instance 'text
-				       :width ,*cell-width* :height ,*cell-height*
-				       :master ,(make-nth-name 'frame- i)))
-	      collect `(,(make-nth-name 'to- i)
-			(make-instance 'text
-				       :width ,*cell-width* :height ,*cell-height*
-				       :master ,(make-nth-name 'frame- i)))
-	      collect `(,(make-nth-name 'nominal- i)
-			(make-instance 'text
-				       :width ,*cell-width* :height ,*cell-height*
-				       :master ,(make-nth-name 'frame- i))))
-	(cons 'progn
-	      (loop for i from 1 to n
-		    collect `(setf (text ,(make-nth-name 'from- i))
-				   ,*from*)
-		    collect `(setf (text ,(make-nth-name 'to- i))
-				   ,*to*)
-		    collect `(setf (text ,(make-nth-name 'nominal- i))
-				   ,*nominal*)
-		    collect `(pack ,(make-nth-name 'frame- i))
-		    collect `(pack ,(make-nth-name 'label- i) :side :left)
-		    collect `(pack ,(make-nth-name 'from- i) :side :left)
-		    collect `(pack ,(make-nth-name 'nominal- i) :side :left)		    
-		    collect `(pack ,(make-nth-name 'to- i) :side :left)))
-	`(progn ,@body)))
+(defgeneric handle-empty-input (this)
+  (:documentation "Handles the condition, when the input is empty."))
 
-(defmacro polynomial-from-n-tb (n)
-  (append '(make-instance 'sizeless-polynomial)
-	  ;; reading bounds and nominals
-	  `(:approx-step ,(read-from-tb 'approx-step-tb))
-	  (loop for i from 1 to n
-		append (list (make-keyword (symbolicate 'r i))
-			     `(read-from-tb ,(symbolicate 'nominal- i)))
-		append (list (make-keyword (symbolicate 'r i '-end))
-			     `(read-from-tb ,(symbolicate 'to- i))) 
-		append (list (make-keyword (symbolicate 'r i '-start))
-			     `(read-from-tb ,(symbolicate 'from- i))))))
+(defgeneric display (place data)
+  (:documentation "Displays data in the given place."))
+;;;; IMPLEMENTATION:
 
-(defun make-plot ()
-  "Builds a plot and loads image.")
+(defclass input-field (text)
+  ((width  :initform 6
+	   :initarg :width)
+   (height :initform 1
+	   :initarg :height)
+   (init-side :initform :left
+	      :initarg :init-side)
+   (init-contents :initform ""
+		  :initarg :init-contents
+		  :accessor init-contents))
+  (:documentation "Represents an input field."))
 
-(defun show-robust ()
-  "Calculates robust radius and shows the result")
 
-;;;; MAIN:
+(defmethod read-double ((this input-field))
+  (handler-case
+      (-<>>
+	  (read-from-string (text this))
+	(coerce <> 'double-float))
+    (t (arg) (handle-empty-input arg))))
+
+(defmethod initialize-instance :after ((this input-field) &key)
+  (with-slots (init-contents init-side) this
+    (setf (text this) init-contents)
+    (pack this :side init-side)))
+
+(defclass output-field (text)
+  ((init-side :initform :left
+	      :initarg :init-side)
+   (init-contents :initform ""
+		  :initarg :init-contents
+		  :accessor init-contents))
+  (:documentation "Represents an input field."))
+
+(defmethod initialize-instance :after ((this output-field) &key)
+  (with-slots (init-contents init-side) this
+    (setf (text this) init-contents)
+    (configure this :height 1)
+    (configure this :width  6)
+    (pack this :side init-side)))
+
+(defmethod display ((this output-field) obj)
+  (->>
+      (format nil "~a" obj)
+    (setf (text this))))
+
+(defclass data-frame (frame)
+  ((init-side :initform :left
+	      :initarg :init-side)
+   (init-border :initform :sunken
+		:initarg :border-style)))
+
+(defmethod initialize-instance :after ((this data-frame) &key)
+  (with-slots (init-border init-side) this
+    (configure this :relief init-border)
+    (pack this :side init-side)))
+
+(defclass image-view (canvas)
+  ())
+
+(defmethod initialize-instance :after ((this image-view)  &key)
+  (configure this :width 640)
+  (configure this :height 480)
+  (pack this :side :left))
+
+(defmethod display ((this image-view) (filename string))
+  (let* ((img (make-image)))
+    (image-load img filename)
+    (create-image this 0 0 :image img)))
+
+(defclass polynomial-piece (data-frame)
+  ((init-side :initform :top)
+   (label)
+   (nominal)
+   (start)
+   (end)))
+
+(defmethod start ((this polynomial-piece)))
+
+(defmethod nominal ((this polynomial-piece)))
+
+(defmethod end ((this polynomial-piece)))
+
+(defmethod initialize-instance ((this polynomial-piece) &key)
+  (with-slots (label start nominal end) this
+    (setf label (make-instance 'lambel :width 6 :master this))
+    (pack label)
+    (setf nominal (make-instance 'input-field :width 6 :height 1 :master this))
+    (setf start   (make-instance 'input-field :width 6 :height 1 :master this))
+    (setf end     (make-instance 'input-field :width 6 :height 1 :master this))))
+
+(defclass shimmy-container (data-frame)
+  ((r1 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r2 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r3 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r4 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r5 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r6 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r7 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r8 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r9 :initform  (make-instance 'polynomial-piece :init-side :top))   
+   (r10 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r11 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r12 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r13 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r14 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r15 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r16 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r17 :initform (make-instance 'polynomial-piece :init-side :top))  
+   (r18 :initform (make-instance 'polynomial-piece :init-side :top))))
+
 (defun main ()
   (with-ltk ()
-    (let* ((master-frame (make-instance 'frame))
-	   (approx-frame (make-instance 'frame))
-	   (lab-frame (make-instance 'frame
-				     :master master-frame))
-	   (empty-label (make-instance 'label
-				      :width *cell-width*
-				      :master lab-frame))
-	   (from-label (make-instance 'label
-				      :text "от"
-				      :width *cell-width*
-				      :master lab-frame))
-	   (nom-label (make-instance 'label
-				     :text "ном."
-				     :width *cell-width*
-				     :master lab-frame))	  
-	   (to-label (make-instance 'label
-				    :text "до"
-				    :width *cell-width*
-				    :master lab-frame)))
+    (let* ((main-frame (make-instance 'data-frame))
+	   (input (make-instance 'input-field :master main-frame
+					      :width 6
+					      :height 1))
+	   (image (make-instance 'image-view))
+	   (output (make-instance 'output-field :master main-frame
+						:width 6
+						:height 1))
+	   (butt (make-instance 'button :master main-frame :text "Построить"
+					:command (lambda ()
+						   (display image "plot_R1_from:0_to:1_R2_from:0_to:1_by:0.1d0.png")))))
+      (pack butt))))
 
-      (pack master-frame)
-      (pack lab-frame :side :top)
-      (pack empty-label :side :left)
-      (pack from-label :side :left)
-      (pack nom-label :side :left)
-      (pack to-label :side :left)
-      (with-n-frames 18 master-frame
-	))))
