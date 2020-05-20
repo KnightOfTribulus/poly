@@ -12,6 +12,8 @@
   (defparameter *nominal* "0.5")
   (defparameter *cell-width* 6)
   (defparameter *cell-height* 1)
+  (defun make-keyword (sym)
+    (al:make-keyword (string-upcase (format nil "~a" sym))))
   (defun make-nth-name (sym n)
     (al:symbolicate sym (string-upcase (format nil "~a" n))))) 
 
@@ -30,7 +32,7 @@
 	      
 	      collect `(,(make-nth-name 'from- i)
 			(make-instance 'text
-				       :width ,*cell-width* :height ,*cell-height*				    
+				       :width ,*cell-width* :height ,*cell-height*
 				       :master ,(make-nth-name 'frame- i)))
 	      collect `(,(make-nth-name 'to- i)
 			(make-instance 'text
@@ -55,6 +57,18 @@
 		    collect `(pack ,(make-nth-name 'to- i) :side :left)))
 	`(progn ,@body)))
 
+(defmacro polynomial-from-n-tb (n)
+  (append '(make-instance 'sizeless-polynomial)
+	  ;; reading bounds and nominals
+	  `(:approx-step ,(read-from-tb 'approx-step-tb))
+	  (loop for i from 1 to n
+		append (list (make-keyword (symbolicate 'r i))
+			     `(read-from-tb ,(symbolicate 'nominal- i)))
+		append (list (make-keyword (symbolicate 'r i '-end))
+			     `(read-from-tb ,(symbolicate 'to- i))) 
+		append (list (make-keyword (symbolicate 'r i '-start))
+			     `(read-from-tb ,(symbolicate 'from- i))))))
+
 (defun make-plot ()
   "Builds a plot and loads image.")
 
@@ -65,6 +79,7 @@
 (defun main ()
   (with-ltk ()
     (let* ((master-frame (make-instance 'frame))
+	   (approx-frame (make-instance 'frame))
 	   (lab-frame (make-instance 'frame
 				     :master master-frame))
 	   (empty-label (make-instance 'label
@@ -83,11 +98,11 @@
 				    :width *cell-width*
 				    :master lab-frame)))
 
-      	(pack master-frame)
+      (pack master-frame)
       (pack lab-frame :side :top)
       (pack empty-label :side :left)
       (pack from-label :side :left)
-	(pack nom-label :side :left)
-	(pack to-label :side :left)
+      (pack nom-label :side :left)
+      (pack to-label :side :left)
       (with-n-frames 18 master-frame
 	))))

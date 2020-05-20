@@ -1,12 +1,17 @@
 (in-package :poly)
 ;;;; UTILITIES:
 
+(defun  read-from-tb (name)
+  (-<>>
+      (text name)
+    (read-from-string <>))) ;; NEED EXCEPTION HANDLING!!!
+
 (defun distance-1d (x y)
   (abs (- x y)))
 
 (defun symbolicate (&rest symbols)
   (intern (string-upcase (format nil "~{~a~}" symbols))
-	  :popts))
+	  :poly))
 
 (defun negative-p (num)
   (< num 0))
