@@ -72,20 +72,26 @@
   (append  '(setf *current-poly*)
 	   (list
 	    (append '(make-instance 'sizeless-polynomial)
-		      '(:approx-step (read-double approx-field))
+		      '(:approx-step (read-num approx-field))
 		      (loop for i from 1 to n
 			    collect (make-keyword 'r i)
-			    collect `(read-double ,(symbolicate 'r i))
+			    collect `(read-num ,(symbolicate 'r i))
 			    collect (make-keyword 'r i '-start)
-			    collect `(read-double ,(symbolicate 'r- i '-start))
+			    collect `(read-num ,(symbolicate 'r- i '-start))
 			    collect (make-keyword 'r i '-end)
-			    collect `(read-double ,(symbolicate 'r- i '-end)))))))
+			    collect `(read-num ,(symbolicate 'r- i '-end)))))))
 
 (defmethod read-symbol ((this text))
   (handler-case
       (-<>>
 	  (read-from-string (text this))
 	(coerce <> 'symbol))
+    (t (arg) (handle-empty-input arg))))
+
+(defmethod read-num ((this text))
+  (handler-case
+      (-<>>
+	  (read-from-string (text this)))
     (t (arg) (handle-empty-input arg))))
 
 (defmethod read-double ((this text))
@@ -109,6 +115,7 @@
 (defmethod initialize-instance :after ((this data-frame) &key)
   (with-slots (init-border init-side) this
     (configure this :relief init-border)
+    (configure this :borderwidth 3)
     (pack this :side init-side)))
 
 (defclass image-view (canvas)
@@ -175,19 +182,20 @@
 						  :master main-frame
 						  :command (lambda ()
 							     (read-from-n-frames 18)
-							     (print *current-poly*)
 							     (->>
+								 ;;(display image "plot_R1_from:0_to:1_R2_from:0_to:1_by:0.01.png")
 								 (plot-to-file *current-poly*
 									       (read-symbol axis-x)
 									       (read-symbol axis-y))
-							       (display image))))))
-	  (setf (text approx-field)  "0.05")
+							         (display image)
+								 )))))
+	  (display approx-field "0.01")  
 	  (pack approx-frame :side :bottom)
 	  (pack approx-label :side :left)
 	  (pack approx-field :side :left)
 	  (pack axis-frame :side :bottom)
 	  (pack axis-lab :side :left)
-	  (pack axis-x :side :left)
+	  (pack axis-x :side :left) 
 	  (pack axis-y :side :left)
 	  (pack output-frame :side :bottom)
 	  (pack output-lab :side :left)
@@ -195,5 +203,7 @@
 	  (pack rad-button :side :bottom)
 	  (pack rob-button :side :bottom)
 	  (pack plot-button :side :bottom)
-	  (pack image :side :left))))))
+	  (pack image :side :left)
+	  (display axis-x "r1")
+	  (display axis-y "r2"))))))
 
