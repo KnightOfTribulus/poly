@@ -150,22 +150,38 @@
 					    :height *cell-height*))
 	   (output-frame (make-instance 'data-frame :master main-frame))
 	   (output-lab   (make-instance 'label :master output-frame
-					       :width *cell-width*))
+					       :width *cell-width*
+					       :text "=>"))
 	   (output-field (make-instance 'text :master output-frame
 					      :width *cell-width*
 					      :height *cell-height*))) 
 
       (with-n-frames 18 main-frame
-	(let ((plot-button (make-instance 'button :text "Построить"
+	(let ((rob-button (make-instance 'button :text "Робастн."
+						 :master main-frame
+						 :command (lambda ()
+							    (read-from-n-frames 18)
+							    (->> (robust-radius *current-poly*)
+							      (display output-field)))))
+	      (rad-button (make-instance 'button :text "Радиус"
+						 :master main-frame
+						 :command (lambda ()
+							    (read-from-n-frames 18)
+							    (->> (radius *current-poly*
+									 (read-symbol axis-x)
+									 (read-symbol axis-y))
+							      (display output-field)))))
+	      (plot-button (make-instance 'button :text "Построить"
 						  :master main-frame
 						  :command (lambda ()
 							     (read-from-n-frames 18)
-							     (let ((plot-to-display (plot-to-file *current-poly*
+							     (print *current-poly*)
+							     (->>
+								 (plot-to-file *current-poly*
 									       (read-symbol axis-x)
-									       (read-symbol axis-y))))
-							       (sleep 2)
-							       (display image plot-to-display))))))
-	  (setf (text approx-field)  "0.01")
+									       (read-symbol axis-y))
+							       (display image))))))
+	  (setf (text approx-field)  "0.05")
 	  (pack approx-frame :side :bottom)
 	  (pack approx-label :side :left)
 	  (pack approx-field :side :left)
@@ -173,6 +189,11 @@
 	  (pack axis-lab :side :left)
 	  (pack axis-x :side :left)
 	  (pack axis-y :side :left)
+	  (pack output-frame :side :bottom)
+	  (pack output-lab :side :left)
+	  (pack output-field :side :left)
+	  (pack rad-button :side :bottom)
+	  (pack rob-button :side :bottom)
 	  (pack plot-button :side :bottom)
 	  (pack image :side :left))))))
 

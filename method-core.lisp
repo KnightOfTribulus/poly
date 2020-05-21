@@ -109,4 +109,3 @@ Must return a new polynomial object, and leave the initial object unchanged"))
 	(plot #'(lambda () (format t "~&~{~a ~}" (center this x y)))
 	      :with '(:points :linestyle 4)))
       output-file-name)))
-
