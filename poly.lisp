@@ -81,6 +81,13 @@
 			    collect (make-keyword 'r i '-end)
 			    collect `(read-double ,(symbolicate 'r- i '-end)))))))
 
+(defmethod read-symbol ((this text))
+  (handler-case
+      (-<>>
+	  (read-from-string (text this))
+	(coerce <> 'symbol))
+    (t (arg) (handle-empty-input arg))))
+
 (defmethod read-double ((this text))
   (handler-case
       (-<>>
@@ -130,18 +137,42 @@
 	   (approx-field (make-instance 'text :master approx-frame
 					:width *cell-width*
 					      :height *cell-height*))
-	   (axis-frame ())) ;; <- TODO ri rj axices
+	   (axis-frame (make-instance 'data-frame :init-side :bottom
+				      :master main-frame))
+	   (axis-lab   (make-instance 'label :master axis-frame
+					     :width *cell-width*
+					     :text "Оси:"))
+	   (axis-y     (make-instance 'text :master axis-frame
+					    :width *cell-width*
+					    :height *cell-height*))
+	   (axis-x     (make-instance 'text :master axis-frame
+					    :width *cell-width*
+					    :height *cell-height*))
+	   (output-frame (make-instance 'data-frame :master main-frame))
+	   (output-lab   (make-instance 'label :master output-frame
+					       :width *cell-width*))
+	   (output-field (make-instance 'text :master output-frame
+					      :width *cell-width*
+					      :height *cell-height*))) 
 
       (with-n-frames 18 main-frame
 	(let ((plot-button (make-instance 'button :text "Построить"
 						  :master main-frame
 						  :command (lambda ()
 							     (read-from-n-frames 18)
-							     ))))
+							     (let ((plot-to-display (plot-to-file *current-poly*
+									       (read-symbol axis-x)
+									       (read-symbol axis-y))))
+							       (sleep 2)
+							       (display image plot-to-display))))))
 	  (setf (text approx-field)  "0.01")
 	  (pack approx-frame :side :bottom)
 	  (pack approx-label :side :left)
 	  (pack approx-field :side :left)
+	  (pack axis-frame :side :bottom)
+	  (pack axis-lab :side :left)
+	  (pack axis-x :side :left)
+	  (pack axis-y :side :left)
 	  (pack plot-button :side :bottom)
 	  (pack image :side :left))))))
 
