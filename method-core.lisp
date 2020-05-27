@@ -61,7 +61,7 @@ Must return a new polynomial object, and leave the initial object unchanged"))
 
 (defmethod radius ((this polynomial) x y)
   (-<>>
-      (lp:pmapcar (lambda (var-x)
+      (lp:pmapcan (lambda (var-x)
 		   (loop for var-y in (axis-range this y) ;; <- collecting unstables
 			 for current-poly = (vary this x y var-x var-y)
 			 unless (stable-p current-poly)
@@ -70,7 +70,6 @@ Must return a new polynomial object, and leave the initial object unchanged"))
 			   finally (return unstable-dists)))
 		  (axis-range this x))
     (remove-if-not #'identity)
-    (al:flatten)
     (if <>
 	(apply #'min <>)
 	(all-stable-distance this x y))))

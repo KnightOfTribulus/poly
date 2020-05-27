@@ -49,6 +49,6 @@
     (-<>>
 	(loop for i from 0.5 downto 0.01 by 0.005
 	       for new-poly = (md:modf (approx-step pln) i)
-	      collect  (list i (total-run-time (radius new-poly 'r1 'r2))))
+	      collect  (list i (total-run-time (radius-slow new-poly 'r1 'r2))))
       (loop for i in <> do
 	(format t "~&~{~a ~}" i)))))
