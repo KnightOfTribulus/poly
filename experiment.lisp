@@ -52,3 +52,22 @@
 	      collect  (list i (total-run-time (radius-slow new-poly 'r1 'r2))))
       (loop for i in <> do
 	(format t "~&~{~a ~}" i)))))
+
+(defgeneric radius! (this x y)
+  (:documentation "bad version of radius"))
+
+(defmethod radius! ((this polynomial) x y)
+  (-<>>
+      (lp:pmapcar (lambda (var-x)
+		   (loop for var-y in (axis-range this y) ;; <- collecting unstables
+			 for current-poly = (vary this x y var-x var-y)
+			 unless (stable-p current-poly)
+			   collect (distance this current-poly x y)
+			     into unstable-dists
+			   finally (return unstable-dists)))
+		  (axis-range this x))
+    (al:flatten)
+    (remove-if-not #'identity)
+    (if <>
+	(apply #'min <>)
+	(all-stable-distance this x y))))
