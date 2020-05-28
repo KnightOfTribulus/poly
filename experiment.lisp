@@ -2,18 +2,16 @@
 
 (in-package :poly)
 
-(defmacro total-run-time (&body thunk)
+(defmacro real-time (&body thunk)
   (al:with-gensyms (outstr results)
     `(-<>>
 	 (with-output-to-string (,outstr)
 	   (let ((*trace-output* ,outstr))
 	     (setq ,results (multiple-value-list (time ,@thunk)))
 	     (terpri ,outstr)))
-       (str:split "real time")
+       (str:split ":")
        (cadr)
-       (str:split "system)")
-       (car)
-       (str:words)
+       (str:split "seconds")
        (car)
        (read-from-string)
        (apply #'values <> ,results))))
@@ -23,8 +21,8 @@
     (-<>>
 	(loop for i from 0.5 downto 0.01 by 0.005
 	       for new-poly = (md:modf (approx-step pln) i)
-	      collect  (list i ;;(/ 1 (expt i 2))
-			     (total-run-time (radius new-poly 'r1 'r2))))
+	      collect  (list (/ 1 (expt i 2))
+			     (real-time (radius new-poly 'r1 'r2))))
       (loop for i in <> do
 	(format t "~&~{~a ~}" i))))
   (fc:clear-cache-all-function-caches))
@@ -49,8 +47,8 @@
     (-<>>
 	(loop for i from 0.5 downto 0.01 by 0.005
 	       for new-poly = (md:modf (approx-step pln) i)
-	      collect  (list i ;;(/ 1 (expt i 2))
-			     (total-run-time (radius-slow new-poly 'r1 'r2))))
+	      collect  (list (/ 1 (expt i 2))
+			     (real-time (radius-slow new-poly 'r1 'r2))))
       (loop for i in <> do
 	(format t "~&~{~a ~}" i))))
   (fc:clear-cache-all-function-caches))
@@ -59,9 +57,9 @@
 (defun plot-speeds ()
   (with-plots (*standard-output* :debug t)
     (gp-setup :terminal '(pngcairo)
-	      :output "experiment-1.png")
-    (gp :unset :key)
+	      :output "experiment-1.png"
+	      :key '(box lt -1 lw 2 opaque))
     (gp :set :xlabel "n")
     (gp :set :ylabel "τ(n)")
-    (plot #'test-radius :with '(:lines :linecolor :rgb "green"))
-    (plot #'test-radius-slow :with '(:lines :linecolor :rgb "red"))))
+    (plot #'test-radius :with '(lines lw 5 linecolor rgb "green" title "параллельный алг."))
+    (plot #'test-radius-slow :with '(lines lw 5 lt 3 linecolor rgb "red" title "последовательный алг."))))

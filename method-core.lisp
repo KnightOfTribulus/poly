@@ -69,7 +69,6 @@ Must return a new polynomial object, and leave the initial object unchanged"))
 			   collect (distance this current-poly x y)
 			     into unstable-dists
 			 finally (return unstable-dists)))
-		  :parts *workers-count* 
 		  (axis-range this x))
     (if <>
 	(apply #'min <>)
