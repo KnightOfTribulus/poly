@@ -56,7 +56,8 @@ Must return a new polynomial object, and leave the initial object unchanged"))
     (lp:pmapcar (lambda (comb) ;; should be parallel
 		  (radius this
 			  (car  comb) ;; car is x, cadr is y
-			  (cadr comb))))
+			  (cadr comb)))
+		:parts *workers-count*)
     (apply #'min)))
 
 (defmethod radius ((this polynomial) x y)
@@ -67,7 +68,8 @@ Must return a new polynomial object, and leave the initial object unchanged"))
 			 unless (stable-p current-poly)
 			   collect (distance this current-poly x y)
 			     into unstable-dists
-			   finally (return unstable-dists)))
+			 finally (return unstable-dists)))
+		  :parts *workers-count* 
 		  (axis-range this x))
     (if <>
 	(apply #'min <>)
