@@ -23,22 +23,22 @@
     (-<>>
 	(loop for i from 0.5 downto 0.01 by 0.005
 	       for new-poly = (md:modf (approx-step pln) i)
-	      collect  (list i (total-run-time (radius new-poly 'r1 'r2))))
+	      collect  (list i ;;(/ 1 (expt i 2))
+			     (total-run-time (radius new-poly 'r1 'r2))))
       (loop for i in <> do
-	(format t "~&~{~a ~}" i)))))
+	(format t "~&~{~a ~}" i))))
+  (fc:clear-cache-all-function-caches))
 
 (defmethod radius-slow ((this polynomial) x y)
   (-<>>
-      (mapcar (lambda (var-x)
-		   (loop for var-y in (axis-range this y) ;; <- collecting unstables
-			 for current-poly = (vary this x y var-x var-y)
-			 unless (stable-p current-poly)
-			   collect (distance this current-poly x y)
-			     into unstable-dists
-			   finally (return unstable-dists)))
-		  (axis-range this x))
-    (remove-if-not #'identity)
-    (al:flatten)
+      (mapcan (lambda (var-x)
+		(loop for var-y in (axis-range this y) ;; <- collecting unstables
+		      for current-poly = (vary this x y var-x var-y)
+		      unless (stable-p current-poly)
+			collect (distance this current-poly x y)
+			  into unstable-dists
+		      finally (return unstable-dists)))
+	      (axis-range this x))
     (if <>
 	(apply #'min <>)
 	(all-stable-distance this x y))))
@@ -49,25 +49,19 @@
     (-<>>
 	(loop for i from 0.5 downto 0.01 by 0.005
 	       for new-poly = (md:modf (approx-step pln) i)
-	      collect  (list i (total-run-time (radius-slow new-poly 'r1 'r2))))
+	      collect  (list i ;;(/ 1 (expt i 2))
+			     (total-run-time (radius-slow new-poly 'r1 'r2))))
       (loop for i in <> do
-	(format t "~&~{~a ~}" i)))))
+	(format t "~&~{~a ~}" i))))
+  (fc:clear-cache-all-function-caches))
 
-(defgeneric radius! (this x y)
-  (:documentation "bad version of radius"))
 
-(defmethod radius! ((this polynomial) x y)
-  (-<>>
-      (lp:pmapcar (lambda (var-x)
-		   (loop for var-y in (axis-range this y) ;; <- collecting unstables
-			 for current-poly = (vary this x y var-x var-y)
-			 unless (stable-p current-poly)
-			   collect (distance this current-poly x y)
-			     into unstable-dists
-			   finally (return unstable-dists)))
-		  (axis-range this x))
-    (al:flatten)
-    (remove-if-not #'identity)
-    (if <>
-	(apply #'min <>)
-	(all-stable-distance this x y))))
+(defun plot-speeds ()
+  (with-plots (*standard-output* :debug t)
+    (gp-setup :terminal '(pngcairo)
+	      :output "experiment-1.png")
+    (gp :unset :key)
+    (gp :set :xlabel "n")
+    (gp :set :ylabel "τ(n)")
+    (plot #'test-radius :with '(:lines :linecolor :rgb "green"))
+    (plot #'test-radius-slow :with '(:lines :linecolor :rgb "red"))))

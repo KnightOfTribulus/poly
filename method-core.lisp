@@ -69,7 +69,6 @@ Must return a new polynomial object, and leave the initial object unchanged"))
 			     into unstable-dists
 			   finally (return unstable-dists)))
 		  (axis-range this x))
-    (remove-if-not #'identity)
     (if <>
 	(apply #'min <>)
 	(all-stable-distance this x y))))
